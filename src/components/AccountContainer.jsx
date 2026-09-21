@@ -1,48 +1,59 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import TransactionsList from "./TransactionsList";
 import Search from "./Search";
 import AddTransactionForm from "./AddTransactionForm";
 import Sort from "./Sort";
 
 function AccountContainer() {
-  const [transactions,setTransactions] = useState([])
-  const [search,setSearch] = useState("")
-  // console.log(search)
+  const [transactions, setTransactions] = useState([]);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("");
 
-  useEffect(()=>{
+  // Load all transactions from the backend when the page first renders
+  useEffect(() => {
     fetch("http://localhost:6001/transactions")
-    .then(r=>r.json())
-    .then(data=>setTransactions(data))
-  },[])
+      .then((r) => r.json())
+      .then((data) => setTransactions(data));
+  }, []);
 
-  function postTransaction(newTransaction){
-    fetch('http://localhost:6001/transactions',{
+  // Send a new transaction to the backend, then add it to the list on screen
+  function postTransaction(newTransaction) {
+    fetch("http://localhost:6001/transactions", {
       method: "POST",
-      headers:{
-        "Content-Type": "application/json"
+      headers: {
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(newTransaction)
+      body: JSON.stringify(newTransaction),
     })
-    .then(r=>r.json())
-    .then(data=>setTransactions([...transactions,data]))
-  }
-  
-  // Sort function here
-  function onSort(sortBy){
-    
+      .then((r) => r.json())
+      .then((data) => setTransactions([...transactions, data]));
   }
 
-  // Filter using search here and pass new variable down
-  
+  // Remember which field the user picked in the sort dropdown
+  function onSort(field) {
+    setSortBy(field);
+  }
+
+  // Only keep transactions whose description matches the search text
+  const filteredTransactions = transactions.filter((transaction) =>
+    transaction.description.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Sort the filtered list by the chosen field (A to Z). No field chosen means no sorting.
+  const displayedTransactions = [...filteredTransactions].sort((a, b) => {
+    if (!sortBy) return 0;
+    return String(a[sortBy]).localeCompare(String(b[sortBy]));
+  });
 
   return (
     <div>
-      <Search setSearch={setSearch}/>
-      <AddTransactionForm postTransaction={postTransaction}/>
-      <Sort onSort={onSort}/>
-      <TransactionsList transactions={transactions} />
+      <Search setSearch={setSearch} />
+      <AddTransactionForm postTransaction={postTransaction} />
+      <Sort onSort={onSort} />
+      <TransactionsList transactions={displayedTransactions} />
     </div>
   );
 }
 
 export default AccountContainer;
+
